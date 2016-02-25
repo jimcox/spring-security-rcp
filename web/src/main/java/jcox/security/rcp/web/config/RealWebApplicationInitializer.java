@@ -7,6 +7,7 @@ import javax.servlet.ServletRegistration;
 import org.springframework.web.WebApplicationInitializer;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import org.springframework.web.context.support.HttpRequestHandlerServlet;
 import org.springframework.web.servlet.DispatcherServlet;
 
 public class RealWebApplicationInitializer implements WebApplicationInitializer {
@@ -30,6 +31,12 @@ public class RealWebApplicationInitializer implements WebApplicationInitializer 
 	        container.addServlet("dispatcher", new DispatcherServlet(dispatcherContext));
 	      dispatcher.setLoadOnStartup(1);
 	      dispatcher.addMapping("/ui/*");
+	      
+	      ServletRegistration.Dynamic remotingExporter =
+	  	  container.addServlet("remotingExporter", new HttpRequestHandlerServlet());
+	      remotingExporter.setLoadOnStartup(2);
+	      remotingExporter.addMapping("/remoting/DateService");
+	  	      
 	}
 
 }
