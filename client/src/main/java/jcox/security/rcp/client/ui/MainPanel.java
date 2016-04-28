@@ -2,7 +2,7 @@ package jcox.security.rcp.client.ui;
 
 import javax.swing.JPanel;
 
-
+import jcox.security.rcp.client.service.ServiceInvocator;
 import jcox.security.rcp.client.service.ServiceLocator;
 
 import java.awt.FlowLayout;
@@ -32,10 +32,13 @@ public class MainPanel extends JPanel {
 
 		btnGetServerTime.addActionListener(e -> 
 		{
-			System.out.println("Handled by Lambda listener");
-			Date date = ServiceLocator.getDateService().getDate();
 			
-			textField.setText(date.toString());
+			ServiceInvocator<Date> invocator = new ServiceInvocator<Date>(
+			
+			() -> ServiceLocator.getDateService().getDate(), 
+			(Date date) -> textField.setText(date.toString()));
+			
+			invocator.invoke();
 			
 		});
 		

@@ -19,6 +19,9 @@ subprojects {
 		runtime "org.slf4j:log4j-over-slf4j:1.7.12"
 		runtime "org.slf4j:jcl-over-slf4j:1.7.12"
 		runtime"ch.qos.logback:logback-classic:1.1.3"
+		
+		compile  'org.springframework.security:spring-security-core:4.0.2.RELEASE'
+		
 	}
 
 	task "create-dirs" << {
@@ -33,6 +36,9 @@ project(':web') {
 	apply plugin: 'war'
 	apply from: 'https://raw.github.com/akhikhl/gretty/master/pluginScripts/gretty.plugin'
 	apply plugin: 'eclipse-wtp'
+
+	war.archiveName "web.war"
+
 	dependencies {
 
 		compile project(':api')
@@ -49,6 +55,7 @@ project(':web') {
 
 		compile  'org.springframework.security:spring-security-config:4.0.2.RELEASE'
 		compile  'org.springframework.security:spring-security-remoting:4.0.2.RELEASE'
+		compile  'org.springframework.security:spring-security-web:4.0.2.RELEASE'
 
 		compile 'org.thymeleaf:thymeleaf:2.1.4.RELEASE'
     	compile 'org.thymeleaf:thymeleaf-spring4:2.1.4.RELEASE'
@@ -67,11 +74,18 @@ project(':web') {
 		
 	}
 	
-	
-		
+	gretty {
+		servletContainer = 'tomcat8'	
+	}
 }
 
 project(':client') {
+
+	apply plugin: 'application'
+	
+	mainClassName = "jcox.security.rcp.client.Client"
+
+
 	dependencies {
 
 		compile project(':api')
@@ -81,13 +95,15 @@ project(':client') {
 		runtime "org.slf4j:jcl-over-slf4j:1.7.12"
 		runtime"ch.qos.logback:logback-classic:1.1.3"
 
+		compile 'org.apache.commons:commons-lang3:3.4'
+
 		compile 'org.apache.httpcomponents:httpclient:4.5.1'
 		
 		compile  "org.springframework:spring-core:4.2.2.RELEASE"
 		compile  "org.springframework:spring-context:4.2.2.RELEASE"
+		compile  'org.springframework.security:spring-security-remoting:4.0.2.RELEASE'
 
 		compile  'org.springframework.security:spring-security-config:4.0.2.RELEASE'
-		compile  'org.springframework.security:spring-security-remoting:4.0.2.RELEASE'
 
 		testCompile "junit:junit:4.11"
 		testCompile "org.mockito:mockito-core:1.9.5"

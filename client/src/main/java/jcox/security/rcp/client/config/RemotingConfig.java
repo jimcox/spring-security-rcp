@@ -14,7 +14,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.remoting.httpinvoker.HttpComponentsHttpInvokerRequestExecutor;
 import org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean;
 
+
 import jcox.security.rcp.api.DateService;
+import jcox.security.rcp.api.SecurityService;
 
 @Configuration
 public class RemotingConfig {
@@ -48,7 +50,7 @@ public class RemotingConfig {
 	}
 	
     @Bean
-    public HttpInvokerProxyFactoryBean httpInvokerProxyFactoryBean() throws Exception {
+    public HttpInvokerProxyFactoryBean dateServiceHttpInvokerProxyFactoryBean() throws Exception {
     	
         HttpInvokerProxyFactoryBean httpInvokerProxyFactoryBean = new HttpInvokerProxyFactoryBean();
         httpInvokerProxyFactoryBean.setServiceInterface(DateService.class);
@@ -57,5 +59,16 @@ public class RemotingConfig {
         return httpInvokerProxyFactoryBean;
     }
 	
+    
+    @Bean
+    public HttpInvokerProxyFactoryBean authenticationManagerHttpInvokerProxyFactoryBean() throws Exception {
+    	
+        HttpInvokerProxyFactoryBean httpInvokerProxyFactoryBean = new HttpInvokerProxyFactoryBean();
+        httpInvokerProxyFactoryBean.setServiceInterface(SecurityService.class);
+        httpInvokerProxyFactoryBean.setServiceUrl("http://localhost:8080/web/remoting/RemoteAuthenticationManager");
+        httpInvokerProxyFactoryBean.setHttpInvokerRequestExecutor(httpInvokerRequestExecutor());
+        return httpInvokerProxyFactoryBean;
+    }
+
 	
 }
