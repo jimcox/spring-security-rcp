@@ -7,24 +7,30 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.Collection;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.http.NoHttpResponseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 
 import jcox.security.rcp.client.service.ServiceInvocator;
 import jcox.security.rcp.client.service.ServiceLocator;
+import jcox.security.rcp.client.service.SupplierConsumerSwingWorker;
 
 public class LoginDialog extends JDialog {
 
@@ -35,7 +41,6 @@ public class LoginDialog extends JDialog {
 	private JTextField txtUserName;
 	private JPasswordField passwordField;
  
-	private final ServiceInvocator<?> accessDenied;
 	
 	/**
 	 * Launch the application.
@@ -60,10 +65,8 @@ public class LoginDialog extends JDialog {
 	/**
 	 * Create the dialog.
 	 */
-	public LoginDialog(ServiceInvocator<?> accessDenied) {
-		
-		this.accessDenied = accessDenied;
-		
+	public LoginDialog(final ServiceInvocator<?> accessDeniedInvocation) {
+				
 		setTitle("Authenticate");
 		setBounds(100, 100, 450, 250);
 		getContentPane().setLayout(new BorderLayout());
@@ -145,30 +148,59 @@ public class LoginDialog extends JDialog {
 				okButton.addActionListener(e -> 
 				
 				{
-					ServiceInvocator<Authentication> invocator = new ServiceInvocator<Authentication> (
+					SupplierConsumerSwingWorker<Authentication, Object> worker = new SupplierConsumerSwingWorker<Authentication, Object>(
 							
-						() -> { 
-							
-							UsernamePasswordAuthenticationToken authRequest =
-									new UsernamePasswordAuthenticationToken(txtUserName.getText(), String.valueOf(passwordField.getPassword()));
-							
-							return ServiceLocator.getRemoteAuthenticationManager().authenticate(authRequest);
-						},
-						
-						(Authentication authentication) ->	{
-							
-							logger.debug("authentication is {}", authentication);
-		
-							if(accessDenied != null) {
+							() -> { 
 								
-								accessDenied.invoke();
-							}
+								UsernamePasswordAuthenticationToken authRequest =
+										new UsernamePasswordAuthenticationToken(txtUserName.getText(), String.valueOf(passwordField.getPassword()));
+								
+								return ServiceLocator.getRemoteAuthenticationManager().authenticate(authRequest);
+							},
 							
-						});
-												
-					invocator.invoke();
-					this.dispose();
+							(Authentication authentication) ->	{
+								
+								logger.debug("authentication is {}", authentication);
+			
+								this.dispose();
 
+								if(accessDeniedInvocation != null) {
+									//replay original request that resulted in authn process
+									accessDeniedInvocation.invoke();
+								}
+							},
+							
+							(ExecutionException ee) -> {
+								
+								logger.info("Caught exception on Authn attempt", ee);
+								
+								Throwable rootCause = ExceptionUtils.getRootCause(ee); 
+						 	   
+						 	   if(rootCause instanceof AuthenticationException ) {
+						 		   
+						 		   	JOptionPane.showMessageDialog(null,
+								 				 rootCause.getMessage(),
+												  "Authentication Exception",
+												  JOptionPane.WARNING_MESSAGE);		        	   
+						 		   
+						 		   	//allows retry
+						 		   	
+						 	   } else {
+						 		   
+						 		  JOptionPane.showMessageDialog(null,
+						 				 rootCause.getMessage(),
+										    "Error",
+										    JOptionPane.ERROR_MESSAGE);		        	   
+
+						 		  //bail
+						 		  this.dispose();
+
+						 	   }
+
+							});
+							
+						worker.execute();
+							
 				});
 				
 				
